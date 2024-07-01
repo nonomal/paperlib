@@ -523,6 +523,7 @@ declare class ExtensionManagementService extends Eventable<IExtensionManagementS
     private readonly _installedExtensions;
     private readonly _installedExtensionInfos;
     private _npmRegistry;
+    private readonly _dailyUpdateScheduler;
     constructor(_extensionPreferenceService: ExtensionPreferenceService, _networkTool: NetworkTool);
     initialize(): Promise<void>;
     _chooseNPMRegistry(): Promise<void>;
@@ -593,6 +594,10 @@ declare class ExtensionManagementService extends Eventable<IExtensionManagementS
      * @returns "uninstalled" | "unloaded" | "loaded"
      */
     isOfficialScrapeExtensionInstalled(): "loaded" | "unloaded" | "uninstalled";
+    /**
+     * Create a scheduled task to check for updates daily.
+     */
+    startUpdateCheckDaemon(): Promise<void>;
     memoryUsage(): number;
 }
 
@@ -1065,7 +1070,7 @@ declare class FileSystemService {
      * Show a file picker.
      * @returns {Promise<OpenDialogReturnValue>} The result of the file picker.
      */
-    showFilePicker(): Promise<OpenDialogReturnValue>;
+    showFilePicker(props?: Array<"openDirectory" | "multiSelections" | "showHiddenFiles" | "createDirectory" | "promptToCreate" | "noResolveAliases" | "treatPackageAsDirectory" | "dontAddToRecent">): Promise<OpenDialogReturnValue>;
     /**
      * Show a folder picker.
      * @returns {Promise<OpenDialogReturnValue>} The result of the folder picker.
@@ -1194,6 +1199,7 @@ declare interface IContextMenuServiceState {
     dataContextMenuShowInFinderClicked: number;
     dataContextMenuEditClicked: number;
     dataContextMenuScrapeClicked: number;
+    dataContextMenuFuzzyScrapeClicked: number;
     dataContextMenuDeleteClicked: number;
     dataContextMenuFlagClicked: number;
     dataContextMenuExportBibTexClicked: number;
@@ -1221,6 +1227,7 @@ declare interface IContextMenuServiceState {
         type: string;
     };
     supContextMenuDeleteClicked: string;
+    supContextMenuRenameClicked: string;
     thumbnailContextMenuReplaceClicked: number;
     thumbnailContextMenuRefreshClicked: number;
     linkToFolderClicked: string;
@@ -1419,6 +1426,7 @@ declare interface IMenuServiceState {
     "View-next": number;
     "View-previous": number;
     "File-delete": number;
+    "File-importFrom": number;
 }
 
 declare type IPaperEntityCollection = Results<IPaperEntityObject> | List<IPaperEntityObject> | Array<IPaperEntityObject>;
@@ -1529,6 +1537,7 @@ declare interface IPreferenceStore {
     shortcutFlag: string;
     shortcutCopyKey: string;
     shortcutDelete: string;
+    shortcutImportFrom: string;
     sidebarWidth: number;
     detailPanelWidth: number;
     mainviewSortBy: string;
@@ -1541,6 +1550,7 @@ declare interface IPreferenceStore {
     selectedCSLStyle: string;
     importedCSLStylesPath: string;
     showPresetting: boolean;
+    showGuide: boolean;
     showWelcome: boolean;
     fontsize: "normal" | "large" | "larger";
 }
@@ -1596,10 +1606,12 @@ declare interface IUIStateServiceState {
     selectedIds: Array<string>;
     selectedPaperEntities: Array<PaperEntity>;
     selectedFeedEntities: Array<FeedEntity>;
-    selectedQuerySentenceId: string;
+    selectedQuerySentenceIds: string[];
     selectedFeed: string;
+    showingCandidatesId: string;
+    metadataCandidates: Record<string, PaperEntity[]>;
     editingPaperSmartFilter: PaperSmartFilter;
-    querySentenceSidebar: string;
+    querySentencesSidebar: Array<string>;
     querySentenceCommandbar: string;
     dragingIds: Array<string>;
     commandBarText: string;
@@ -2001,6 +2013,10 @@ declare class PaperService extends Eventable<IPaperServiceState> {
      */
     deleteSup(paperEntity: PaperEntity, url: string): Promise<void>;
     /**
+     * Set a custom display name of a supplementary file.
+     */
+    setSupDisplayName(paperEntity: PaperEntity, url: string, name: string): Promise<void>;
+    /**
      * Create paper entity from file URLs.
      * @param urlList - The list of URLs.
      * @returns The list of paper entity drafts.
@@ -2355,7 +2371,7 @@ declare class RenderService {
      * @param content - Math content
      * @returns Rendered HTML string
      */
-    renderMath(content: string): Promise<string>;
+    renderMath(content: string): string;
 }
 
 declare interface RSSItem {
@@ -2386,6 +2402,7 @@ declare class RSSRepository {
     parse(rawResponse: string): FeedEntity[];
     parseRSSItems(items: RSSItem[]): FeedEntity[];
     parseAtomItems(items: AtomItem[]): FeedEntity[];
+    parseScienceDirectRSSItems(items: RSSItem[]): FeedEntity[];
 }
 
 declare class SchedulerService {
@@ -2458,6 +2475,16 @@ declare class ScrapeService extends Eventable<{}> {
      * @param force - force scraping metadata.
      * @returns List of paper entities. */
     scrapeMetadata(paperEntityDrafts: PaperEntity[], scrapers: string[], force?: boolean): Promise<PaperEntity[]>;
+    /**
+     * Scrape a data source's metadata.
+     * @param payloads - data source payloads.
+     * @returns List of paper entities' candidates. */
+    fuzzyScrape(paperEntities: IPaperEntityCollection): Promise<Record<string, PaperEntity[]>>;
+    /**
+     * Scrape all entry scrapers to transform data source payloads into a PaperEntity list.
+     * @param payloads - data source payloads.
+     * @returns List of paper entities. */
+    _fuzzyScrape(paperEntities: IPaperEntityCollection): Promise<PaperEntity[][]>;
 }
 
 declare interface ShortcutEvent {
@@ -2585,6 +2612,13 @@ declare class UISlotService extends Eventable<IUISlotState> {
     updateSlot(slotID: keyof IUISlotState, patch: {
         [id: string]: any;
     }): void;
+    /**
+     * Delete an item from a slot
+     * @param slotID - The slot to delete from
+     * @param itemID - The item to delete
+     * @returns
+     */
+    deleteSlotItem(slotID: keyof IUISlotState, itemID: string): void;
 }
 
 /**
@@ -2602,7 +2636,7 @@ declare class UIStateService extends Eventable<IUIStateServiceState> {
      * @param stateKey - key of the state
      * @returns The state
      */
-    getState(stateKey: keyof IUIStateServiceState): string | number | boolean | string[] | number[] | {
+    getState(stateKey: keyof IUIStateServiceState): string | number | boolean | string[] | number[] | Record<string, PaperEntity[]> | {
         _id: string | {
             _bsontype: "ObjectID";
             id: {
@@ -4648,6 +4682,7 @@ declare class WindowProcessManagementService extends Eventable<IWindowProcessMan
      * @param windowId - The id of the window to be set
      */
     center(windowId: string): void;
+    download(windowId: string, url: string, options?: {}, headers?: {}): Promise<string>;
 }
 
 declare class WindowStorage {

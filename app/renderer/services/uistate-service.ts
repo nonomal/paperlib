@@ -30,12 +30,15 @@ export interface IUIStateServiceState {
   // It can be accessed in any component. But it is read-only. It can be only changed by the event listener of selectedIndex in the dataview.
   selectedPaperEntities: Array<PaperEntity>;
   selectedFeedEntities: Array<FeedEntity>;
-  selectedQuerySentenceId: string;
+  selectedQuerySentenceIds: string[];
   selectedFeed: string;
+
+  showingCandidatesId: string;
+  metadataCandidates: Record<string, PaperEntity[]>;
 
   editingPaperSmartFilter: PaperSmartFilter;
 
-  querySentenceSidebar: string;
+  querySentencesSidebar: Array<string>;
   querySentenceCommandbar: string;
 
   dragingIds: Array<string>;
@@ -81,11 +84,14 @@ export class UIStateService extends Eventable<IUIStateServiceState> {
       selectedIds: [],
       selectedPaperEntities: [],
       selectedFeedEntities: [],
-      selectedQuerySentenceId: "",
+      selectedQuerySentenceIds: ["lib-all"],
       selectedFeed: "feed-all",
       dragingIds: [],
 
-      querySentenceSidebar: "",
+      showingCandidatesId: "",
+      metadataCandidates: {},
+
+      querySentencesSidebar: [],
       querySentenceCommandbar: "",
 
       editingPaperSmartFilter: new PaperSmartFilter(),
@@ -182,6 +188,8 @@ export class UIStateService extends Eventable<IUIStateServiceState> {
       feedEditViewShown: false,
       paperSmartFilterEditViewShown: false,
       deleteConfirmShown: false,
+      overlayNoticationShown: false,
+      candidatesViewShown: false,
       renderRequired: -1,
       feedEntityAddingStatus: 0,
       selectedIndex: [],

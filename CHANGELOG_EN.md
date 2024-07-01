@@ -1,3 +1,48 @@
+## v3.1.6 Jun 30 2024
+
+1. Feat: import files via a file picker. by @lcandy2
+2. Feat: fuzzy metadata scraping. by @geoffreychen777 ![](https://paperlib.app/assets/images/getting-started/fuzzyscrape.png)
+3. Enhance: PDF download via browser extension. by @geoffreychen777
+4. For Extension Developer: new API to delete UI slots. by @geoffreychen777
+
+## v3.1.5 Jun 10 2024
+
+1. Fix: the linked folder icon bug. by @geoffreychen777
+2. Enhance: the command bar behavior when pressing the Enter key. by @geoffreychen777
+
+## v3.1.3 Jun 02 2024
+
+1. Feat: now you can combine multiple tags/folders/smartfilters by clicking on them while holding the Ctrl/CMD key. by @geoffreychen777
+2. Feat: now you can drag a subfolder to the root folder. by @geoffreychen777
+3. Fix: a bug when colorizing subfolders. by @geoffreychen777
+
+## v3.1.2 May 25 2024
+
+1. Feat: now you can rename supplementary files. by @ZephyrZhang3, @geoffreychen777
+2. Feat: add guidance for first time users. by @geoffreychen777
+3. Feat: hide '<md>' when display markdown notes. by @geoffreychen777
+4. Fix: a bug when subscribing to ScienceDirect RSS. by @charlieJ107, @geoffreychen777
+5. Fix: a bug when colorizing smartfilters. by @geoffreychen777
+
+## v3.1.1 May 18 2024
+
+1. Introduce A New Extension: `paperlib ai chat extension`. It allows you to discuss a paper with LLMs!!! by @igoogolx, @geoffreychen777
+2. Fix: table view bug. by @geoffreychen777
+
+## v3.1.0 May 18 2024
+
+1. Introduce A New Extension: `paperlib ai chat extension`. It allows you to discuss a paper with LLMs!!! by @igoogolx, @geoffreychen777
+2. Feat: render LaTex in the title. by @geoffreychen777
+3. Feat: highlight the search keyword in the search result. by @geoffreychen777
+4. Others: prepare for the new browser extension. by @geoffreychen777
+5. Fix: preference window drag issue. by @geoffreychen777
+
+## v3.0.11 May 06 2024
+
+1. Fix: import papers into a tag/folder directly. by @geoffreychen777
+2. Enhance: notify when adding a duplicated paper. by @geoffreychen777
+3. Enhance: check extensions update every day. by @charlieJ107
+
 ## v3.0.10 Apr 22 2024
 
 1. Translation: traditional Chinese. thanks @hazdzz

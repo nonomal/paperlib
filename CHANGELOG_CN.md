@@ -1,3 +1,49 @@
+## v3.1.6 30/06 2024
+
+1. 新功能：现在你可以通过文件选择器导入文件。by @lcandy2
+2. 新功能：模糊元数据搜刮。by @geoffreychen777 ![](https://paperlib.app/assets/images/getting-started/fuzzyscrape.png)
+3. 增强：通过浏览器插件下载 PDF。by @geoffreychen777
+4. 插件开发者：新的 API 用于删除 UI 插槽。by @geoffreychen777
+
+
+## v3.1.5 10/06 2024
+
+1. 修复：链接文件夹图标的显示问题。by @geoffreychen777
+2. 增强：命令面板按下回车时的行为。by @geoffreychen777
+
+## v3.1.3 02/06 2024
+
+1. 新功能：现在你可以通过按住 Ctrl/CMD 键点击多个标签/组/智能过滤器来组合它们。by @geoffreychen777
+2. 新功能：现在你可以将子文件夹拖动到根文件夹。
+3. 修复：子文件夹着色 Bug。by @geoffreychen777
+
+## v3.1.2 25/05 2024
+
+1. 新功能：现在你可以自定义重命名附件了。by @ZephyrZhang3, @geoffreychen777
+2. 新功能：为首次使用者添加了引导。by @geoffreychen777
+3. 新功能：在显示 Markdown 笔记时隐藏 `<md>` 标签。by @geoffreychen777
+4. 修复：订阅 ScienceDirect 时的 RSS Bug。by @charlieJ107, @geoffreychen777
+5. 修复：修改智能过滤器颜色时的 Bug。by @geoffreychen777
+
+## v3.1.1 19/05 2024
+
+1. 介绍新插件: `paperlib ai chat extension`. 你可以和语言模型讨论你的论文了。by @igoogolx,@geoffreychen777
+2. 修复：表格视图 Bug。by @geoffreychen777
+
+## v3.1.0 18/05 2024
+
+1. 介绍新插件: `paperlib ai chat extension`. 你可以和语言模型讨论你的论文了。by @igoogolx,@geoffreychen777
+2. 新功能：渲染标题中的 LaTex。by @geoffreychen777
+3. 新功能：在搜索结果中高亮搜索关键字。by @geoffreychen777
+4. 其他：为新浏览器插件做准备。by @geoffreychen777
+5. 修复：偏好设置窗口拖动问题。by @geoffreychen777
+
+## v3.0.11 06/05 2024
+
+1. 修复：直接导入论文到标签/文件夹。by @geoffreychen777
+2. 增强：添加重复论文时的通知。by @geoffreychen777
+3. 增强：每日检查插件更新。by @charlieJ107
+
 ## v3.0.10 24/04 2024
 
 1. 翻译：繁体中文。感谢 @hazdzz

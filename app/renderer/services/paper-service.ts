@@ -103,27 +103,17 @@ export class PaperFilterOptions implements IPaperFilterOptions {
   }
 
   static checkIsDateFilter(dateFilter: string) {
-    return dateFilter.match(
-      /(<|<=|>|>=)\s*\[\d+ DAYS\]/g
-    );
+    return dateFilter.match(/(<|<=|>|>=)\s*\[\d+ DAYS\]/g);
   }
 
   static parseDateFilter(dateFilter: string) {
-    const compareDateMatch = dateFilter.match(
-      /(<|<=|>|>=)\s*\[\d+ DAYS\]/g
-    );
+    const compareDateMatch = dateFilter.match(/(<|<=|>|>=)\s*\[\d+ DAYS\]/g);
     if (compareDateMatch) {
       for (const match of compareDateMatch) {
         if (dateFilter.includes("<")) {
-          dateFilter = dateFilter.replaceAll(
-            match,
-            match.replaceAll("<", ">")
-          );
+          dateFilter = dateFilter.replaceAll(match, match.replaceAll("<", ">"));
         } else if (dateFilter.includes(">")) {
-          dateFilter = dateFilter.replaceAll(
-            match,
-            match.replaceAll(">", "<")
-          );
+          dateFilter = dateFilter.replaceAll(match, match.replaceAll(">", "<"));
         }
       }
     }
@@ -363,6 +353,15 @@ export class PaperService extends Eventable<IPaperServiceState> {
           this._databaseCore.getPartition(),
           isUpdate
         );
+
+        if (!success && !isUpdate) {
+          this._logService.warn(
+            "Faild to add the paper.",
+            `May be duplicated: ${paperEntity.title}`,
+            true,
+            "PaperService"
+          );
+        }
       } catch (error) {
         success = false;
         this._logService.error(
@@ -560,10 +559,37 @@ export class PaperService extends Eventable<IPaperServiceState> {
       true,
       "Entity"
     );
-    await this._fileService.removeFile(url);
+    const realURL = url.split(":::").pop() as string;
+    await this._fileService.removeFile(realURL);
     paperEntity.supURLs = paperEntity.supURLs.filter(
       (supUrl) => !url.endsWith(supUrl)
     );
+
+    await this.update([paperEntity], false, true);
+  }
+
+  /**
+   * Set a custom display name of a supplementary file.
+   */
+  @processing(ProcessingKey.General)
+  @errorcatching(
+    "Failed to set custom display name of a supplementary file.",
+    true,
+    "PaperService"
+  )
+  async setSupDisplayName(paperEntity: PaperEntity, url: string, name: string) {
+    if (this._databaseCore.getState("dbInitializing")) {
+      return;
+    }
+
+    paperEntity.supURLs = paperEntity.supURLs.map((supURL) => {
+      if (supURL === url) {
+        const realSupURL = supURL.split(":::").pop();
+        return `${name}:::${realSupURL}`;
+      } else {
+        return supURL;
+      }
+    });
 
     await this.update([paperEntity], false, true);
   }
@@ -624,7 +650,7 @@ export class PaperService extends Eventable<IPaperServiceState> {
         return paperEntityDraft;
       }
     );
-    return await this.update(toBeUpdatedPaperEntityDrafts, true, false);
+    return await this.update(toBeUpdatedPaperEntityDrafts, false, true);
   }
 
   /**
@@ -710,7 +736,7 @@ export class PaperService extends Eventable<IPaperServiceState> {
     if (this._preferenceService.get("allowRoutineMatch") as boolean) {
       if (
         Math.round(Date.now() / 1000) -
-        (this._preferenceService.get("lastRematchTime") as number) <
+          (this._preferenceService.get("lastRematchTime") as number) <
         7 * 86400 - 10
       ) {
         return;
@@ -739,7 +765,7 @@ export class PaperService extends Eventable<IPaperServiceState> {
 
     const movedEntityDrafts = await Promise.all(
       paperEntityDrafts.map((paperEntityDraft: PaperEntity) =>
-        this._fileService.move(paperEntityDraft, false)
+        this._fileService.move(paperEntityDraft, true, true)
       )
     );
 

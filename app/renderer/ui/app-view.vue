@@ -25,6 +25,7 @@ import PresettingView from "./presetting-view/presetting-view.vue";
 import WhatsNewView from "./whats-new-view/whats-new-view.vue";
 import WelcomeView from "./welcome-view/welcome-view.vue";
 import OverlayNotificationView from "./overlay-notification-view/overlay-notification-view.vue";
+import GuideView from "./guide-view/guide-view.vue";
 
 // ================================
 // State
@@ -63,12 +64,12 @@ const reloadPaperEntities = async () => {
   let querySentence: string;
   let fulltextQuerySetence: string | undefined = undefined;
   if (uiState.querySentenceCommandbar.includes("(fulltext contains")) {
-    querySentence = uiState.querySentenceSidebar;
+    querySentence = uiState.querySentencesSidebar.map((x) => `(${x})`).join(" AND ");
     fulltextQuerySetence = uiState.querySentenceCommandbar;
   } else {
     querySentence = [
       uiState.querySentenceCommandbar,
-      uiState.querySentenceSidebar,
+      ...uiState.querySentencesSidebar,
     ]
       .filter((x) => x)
       .map((x) => `(${x})`)
@@ -193,7 +194,7 @@ disposable(
     [
       "selectedFeed",
       "contentType",
-      "querySentenceSidebar",
+      "querySentencesSidebar",
       "querySentenceCommandbar",
     ],
     (value) => {
@@ -202,15 +203,6 @@ disposable(
       } else if (uiState.contentType === "feed") {
         reloadFeedEntities();
       }
-    }
-  )
-);
-
-disposable(
-  uiStateService.onChanged(
-    ["querySentenceSidebar", "querySentenceCommandbar"],
-    (value) => {
-      reloadPaperEntities();
     }
   )
 );
@@ -311,7 +303,7 @@ const onAddDummyClicked = async () => {
   ) {
     const dummyPaperEntity = new PaperEntity(
       {
-        title: `Dummy Paper <scp>D</scp>-${i}<sup>+T</sup>`,
+        title: `Dummy Paper <scp>D</scp>-${i}<sup>+T</sup> Test latex $^${i}_{a}$`,
         authors: "Dummy Author A, Dummy Author B, Dummy Author C",
         pubTime: `${Math.round(2021 + Math.random() * 10)}`,
         publication: `Publication ${Math.round(Math.random() * 10)}`,
@@ -495,6 +487,17 @@ onMounted(async () => {
       leave-to-class="transform opacity-0"
     >
       <OverlayNotificationView v-if="uiState.overlayNoticationShown" />
+    </Transition>
+
+    <Transition
+      enter-active-class="transition ease-out duration-75"
+      enter-from-class="transform opacity-0"
+      enter-to-class="transform opacity-100"
+      leave-active-class="transition ease-in duration-75"
+      leave-from-class="transform opacity-100"
+      leave-to-class="transform opacity-0"
+    >
+      <GuideView v-if="prefState.showGuide" />
     </Transition>
 
     <Transition

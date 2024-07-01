@@ -77,6 +77,8 @@ export interface IPreferenceStore {
 
   shortcutDelete: string;
 
+  shortcutImportFrom: string;
+
   sidebarWidth: number;
   detailPanelWidth: number;
   mainviewSortBy: string;
@@ -93,6 +95,7 @@ export interface IPreferenceStore {
   importedCSLStylesPath: string;
 
   showPresetting: boolean;
+  showGuide: boolean;
   showWelcome: boolean;
   fontsize: "normal" | "large" | "larger";
 }
@@ -120,7 +123,7 @@ const _defaultPreferences: IPreferenceStore = {
     { key: "rating", enable: false, width: -1 },
     { key: "tags", enable: false, width: -1 },
     { key: "folders", enable: false, width: -1 },
-    { key: "flag", enable: false, width: -1 },
+    { key: "flag", enable: true, width: -1 },
     { key: "note", enable: false, width: -1 },
     { key: "codes", enable: false, width: -1 },
     { key: "pages", enable: false, width: -1 },
@@ -195,6 +198,8 @@ const _defaultPreferences: IPreferenceStore = {
 
   shortcutDelete: "Delete",
 
+  shortcutImportFrom: `${cmdOrCtrl}+O`,
+
   sidebarWidth: 20,
   detailPanelWidth: 75,
   mainviewSortBy: "addTime",
@@ -211,6 +216,7 @@ const _defaultPreferences: IPreferenceStore = {
   importedCSLStylesPath: "",
 
   showPresetting: true,
+  showGuide: true,
   showWelcome: true,
   fontsize: "normal",
 };

@@ -19,6 +19,7 @@ import PaperDetailView from "./detail-view/paper-detail-view.vue";
 import WindowMenuBar from "./menubar-view/window-menu-bar.vue";
 import { Process } from "@/base/process-id.ts";
 import { cmdOrCtrl, ShortcutEvent } from "@/common/utils.ts";
+import CandidateView from "./candidate-view/candidate-view.vue";
 
 // ================================
 // State
@@ -147,6 +148,18 @@ const registerShortcutFromPreference = () => {
       preferenceService.get("shortcutPreview") as string,
       () => {
         PLMainAPI.menuService.click("View-preview");
+      },
+      true,
+      true,
+      shortcutService.viewScope.MAIN
+    )
+  );
+
+  disposeCallbacks.push(
+    shortcutService.register(
+      preferenceService.get("shortcutImportFrom") as string,
+      () => {
+        PLMainAPI.menuService.click("File-importFrom");
       },
       true,
       true,
@@ -304,6 +317,22 @@ const scrapeSelectedEntitiesFrom = (scraperName: string) => {
   }
 };
 
+const fuzzyScrapeSelectedEntities = async () => {
+  if (uiState.contentType === "library") {
+    const paperEntityDrafts = uiState.selectedPaperEntities.map(
+      (paperEntity) => {
+        return new PaperEntity(paperEntity);
+      }
+    );
+    const results = await scrapeService.fuzzyScrape(paperEntityDrafts);
+
+    const newMetadataCandidates = { ...uiState.metadataCandidates, ...results };
+    uiStateService.setState({
+      metadataCandidates: newMetadataCandidates,
+    });
+  }
+};
+
 const removeSelectedEntitiesFrom = (
   categorizeType: CategorizerType,
   categorizeId: OID
@@ -404,6 +433,20 @@ const switchSortBy = (key: string) => {
 
 const switchSortOrder = (order: "asce" | "desc") => {
   preferenceService.set({ mainviewSortOrder: order });
+};
+
+const importFilesFromPicker = async () => {
+  const pickedFiles = await PLMainAPI.fileSystemService.showFilePicker([
+    "multiSelections",
+  ]);
+  if (pickedFiles.canceled || !pickedFiles) {
+    return;
+  }
+  const filePaths: string[] = [];
+  pickedFiles.filePaths.forEach((filePath) => {
+    filePaths.push(`file://${filePath}`);
+  });
+  await paperService.create(filePaths);
 };
 
 const onMenuButtonClicked = (command: string) => {
@@ -523,6 +566,12 @@ disposable(
       );
     }
   )
+);
+
+disposable(
+  PLMainAPI.contextMenuService.on("dataContextMenuFuzzyScrapeClicked", () => {
+    fuzzyScrapeSelectedEntities();
+  })
 );
 
 disposable(
@@ -680,6 +729,12 @@ disposable(
 );
 
 disposable(
+  PLMainAPI.menuService.onClick("File-importFrom", () => {
+    importFilesFromPicker();
+  })
+);
+
+disposable(
   PLMainAPI.menuService.onClick("File-copyBibTex", () => {
     if (uiState.selectedPaperEntities.length >= 1) {
       exportSelectedEntities("BibTex");
@@ -747,7 +802,7 @@ disposable(
     [
       "contentType",
       "selectedFeed",
-      "querySentenceSidebar",
+      "querySentencesSidebar",
       "querySentenceCommandbar",
     ],
     clearSelected
@@ -774,7 +829,8 @@ disposable(
               :key="1"
               :size="
                 uiState.selectedPaperEntities.length === 1 ||
-                uiState.selectedFeedEntities.length === 1
+                uiState.selectedFeedEntities.length === 1 ||
+                uiState.showingCandidatesId !== ''
                   ? prefState.detailPanelWidth
                   : 100
               "
@@ -792,7 +848,8 @@ disposable(
               :key="2"
               :size="
                 uiState.selectedPaperEntities.length === 1 ||
-                uiState.selectedFeedEntities.length === 1
+                uiState.selectedFeedEntities.length === 1 ||
+                uiState.showingCandidatesId !== ''
                   ? 100 - prefState.detailPanelWidth
                   : 0
               "
@@ -806,8 +863,20 @@ disposable(
                 :slot1="uiSlotState.paperDetailsPanelSlot1"
                 :slot2="uiSlotState.paperDetailsPanelSlot2"
                 :slot3="uiSlotState.paperDetailsPanelSlot3"
-                v-show="uiState.selectedPaperEntities.length === 1"
+                v-show="
+                  uiState.selectedPaperEntities.length === 1 &&
+                  !uiState.showingCandidatesId
+                "
                 v-if="uiState.contentType === 'library'"
+              />
+
+              <CandidateView
+                v-if="uiState.contentType === 'library'"
+                v-show="uiState.showingCandidatesId"
+                :id="uiState.showingCandidatesId"
+                :candidates="
+                  uiState.metadataCandidates[uiState.showingCandidatesId]
+                "
               />
 
               <FeedDetailView
