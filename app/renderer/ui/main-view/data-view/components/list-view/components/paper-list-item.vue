@@ -4,8 +4,12 @@ import {
   BIconFolder,
   BIconStarFill,
   BIconTag,
+  BIconFileEarmarkPdf,
+  BIconFileEarmark,
+  BIconGithub,
 } from "bootstrap-icons-vue";
-import { PropType } from "vue";
+import { PropType, ref } from "vue";
+import WordHighlighter from "vue-word-highlighter";
 
 import { getCategorizerString, getPubTypeString } from "@/base/string";
 import { PaperEntity } from "@/models/paper-entity";
@@ -27,6 +31,15 @@ const props = defineProps({
       folders: false,
       flag: true,
       note: false,
+      doi: false,
+      arxiv: false,
+      pages: false,
+      volume: false,
+      number: false,
+      publisher: false,
+      mainURL: false,
+      supURLs: false,
+      codes: false,
     },
   },
   active: {
@@ -45,7 +58,22 @@ const props = defineProps({
     type: Number,
     default: 64,
   },
+  queryHighlight: {
+    type: String,
+    default: "",
+  },
+  showCandidateBtn: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+const renderTitle = (title: string) => {
+  return renderService.renderMath(title);
+};
+
+const emits = defineEmits(["event:click-candidate-btn"]);
+
 </script>
 
 <style>
@@ -61,25 +89,38 @@ scp {
     :class="active ? `bg-accentlight dark:bg-accentdark` : ''"
     :style="`height: ${height}px`"
   >
-    <div class="flex space-x-2">
-      <!-- <div
-        class="my-auto h-1.5 w-1.5 rounded-md"
-        :class="active ? 'bg-red-400' : 'bg-red-500 '"
-        v-if="item.read === undefined ? false : item.read"
-      /> -->
+    <div class="flex space-x-2" :class="active ? 'text-white' : ''">
       <div
-        class="text-[0.84rem] leading-[1.1rem] font-semibold truncate overflow-hidden"
-        :class="active ? 'text-white' : ''"
+        class="text-[0.84rem] leading-[1.1rem] font-semibold truncate overflow-hidden grow"
       >
-        <span v-html="item.title"></span>
-        <!-- {{ item.title }} -->
+        <WordHighlighter
+          :query="queryHighlight"
+          highlight-class="bg-yellow-300 rounded-sm px-0.5"
+          :html-to-highlight="renderTitle(item.title)"
+          :split-by-space="true"
+        >
+        </WordHighlighter>
+      </div>
+      <div 
+        class="flex flex-none justify-end text-xxs rounded-md px-1.5 shadow-md" 
+        :class="active ? 'bg-blue-500 hover:bg-blue-400' : 'bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600'"
+        @click.stop="$emit('event:click-candidate-btn')"
+        v-if="showCandidateBtn"
+      >
+        <span class="m-auto">{{ $t("mainview.foundcandidates") }}</span>
       </div>
     </div>
     <div
       class="text-[0.7rem] leading-[0.9rem] truncate overflow-hidden"
       :class="active ? 'text-white' : ''"
     >
-      {{ item.authors }}
+      <WordHighlighter
+        :query="queryHighlight"
+        highlight-class="bg-yellow-300 rounded-sm px-0.5"
+        :text-to-highlight="item.authors"
+        :split-by-space="true"
+      >
+      </WordHighlighter>
     </div>
     <div
       class="text-[0.7rem] leading-[0.9rem] text-neutral-400 flex space-x-2"
@@ -162,8 +203,82 @@ scp {
       >
         <div>|</div>
         <div class="truncate underline">
-          {{ item.note }}
+          {{ item.note.substring(0, 4) === `<md>` ? item.note.replace(`<md>`, "") : item.note }}
         </div>
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.doi && item.doi"
+      >
+        <div>|</div>
+        <div class="truncate">DOI: {{ item.doi }}</div>
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.arxiv && item.arxiv"
+      >
+        <div>|</div>
+        <div class="truncate">ArXiv: {{ item.arxiv }}</div>
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.pages && item.pages"
+      >
+        <div>|</div>
+        <div class="truncate">pp. {{ item.pages }}</div>
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.volume && item.volume"
+      >
+        <div>|</div>
+        <div class="truncate">vol. {{ item.volume }}</div>
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.number && item.number"
+      >
+        <div>|</div>
+        <div class="truncate">num. {{ item.number }}</div>
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.publisher && item.publisher"
+      >
+        <div>|</div>
+        <div class="truncate">
+          {{ item.publisher }}
+        </div>
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.mainURL && item.mainURL"
+      >
+        <div>|</div>
+        <BIconFileEarmarkPdf class="my-auto text-xs" />
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.supURLs && item.supURLs.length > 0"
+      >
+        <div>|</div>
+        <BIconFileEarmark class="my-auto text-xs" />
+      </div>
+
+      <div
+        class="flex space-x-2 shrink text-ellipsis overflow-hidden"
+        v-if="fieldEnables.codes && item.codes"
+      >
+        <div>|</div>
+        <BIconGithub class="my-auto text-xs" />
       </div>
     </div>
   </div>

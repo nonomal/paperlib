@@ -14,9 +14,17 @@ export class RSSRepository {
   }
 
   async fetch(feed: Feed): Promise<FeedEntity[]> {
+
+    const header = {};
+
+    if (feed.url.includes("rss.sciencedirect.com")) {
+      // Since May 2024, ScienceDirect seems has blocked requests with robot user agents.
+      header["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"
+    }
+
     const response = await PLExtAPI.networkTool.get(
       feed.url,
-      {},
+      header,
       1,
       10000,
       false,
@@ -35,7 +43,9 @@ export class RSSRepository {
 
   parse(rawResponse: string) {
     const parsedXML = this.xmlParser.parse(rawResponse);
-    if (parsedXML["rdf:RDF"]) {
+    if (parsedXML.rss && parsedXML.rss.channel && parsedXML.rss.channel.title.includes("ScienceDirect")) {
+      return this.parseScienceDirectRSSItems((parsedXML as RSS2).rss.channel.item);
+    } else if (parsedXML["rdf:RDF"]) {
       return this.parseRSSItems((parsedXML as RSS1)["rdf:RDF"].item);
     } else if (parsedXML.rss) {
       return this.parseRSSItems((parsedXML as RSS2).rss.channel.item);
@@ -177,6 +187,52 @@ export class RSSRepository {
 
     return feedEntityDrafts;
   }
+
+  parseScienceDirectRSSItems(items: RSSItem[]) {
+    let feedEntityDrafts: FeedEntity[] = [];
+    for (const item of items) {
+      const feedEntityDraft = new FeedEntity({}, true);
+      feedEntityDraft.title = item.title || "";
+      feedEntityDraft.mainURL = item.link || "";
+
+      if (item.description) {
+        // get field between <p> </p>
+        const descriptionComponents = (item.description as string).match(
+          /<p>(.*?)<\/p>/g
+        ) || [];
+
+        for (const component of descriptionComponents) {
+          if (component.startsWith("<p>Author(s)")) {
+            feedEntityDraft.authors = component.replaceAll("<p>Author(s): ", "").replaceAll("</p>", "")
+          }
+          if (component.startsWith("<p>Publication date:")) {
+            const dateStr = component.replaceAll("<p>Publication date: ", "").replaceAll("</p>", "")
+            const date = new Date(dateStr)
+            feedEntityDraft.pubTime = `${date.getFullYear()}`
+          }
+          if (component.startsWith("<p><b>Source")) {
+            const sourceComponents = component
+              .replaceAll("<p>", "")
+              .replaceAll("</p>", "")
+              .replace("<b>Source:</b> ", "")
+              .split(",").map(s => s.trim())
+            feedEntityDraft.publication = sourceComponents[0]
+            for (const sourceComponent of sourceComponents.slice(1)) {
+              if (sourceComponent.startsWith("Volume")) {
+                feedEntityDraft.volume = sourceComponent.replace("Volume ", "")
+              }
+              if (sourceComponent.startsWith("Issue")) {
+                feedEntityDraft.number = sourceComponent.replace("Issue ", "")
+              }
+            }
+          }
+        }
+      }
+      feedEntityDrafts.push(feedEntityDraft);
+    }
+
+    return feedEntityDrafts;
+  }
 }
 
 interface RSSItem {
@@ -200,8 +256,8 @@ interface RSSItem {
 interface AtomItem {
   author: { name: string }[] | { name: string };
   link:
-    | { "@_href": string; "@_type": string }[]
-    | { "@_href": string; "@_type": string };
+  | { "@_href": string; "@_type": string }[]
+  | { "@_href": string; "@_type": string };
   id: string;
   published: string;
   summary: string;

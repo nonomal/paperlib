@@ -77,6 +77,8 @@ export interface IPreferenceStore {
 
   shortcutDelete: string;
 
+  shortcutImportFrom: string;
+
   sidebarWidth: number;
   detailPanelWidth: number;
   mainviewSortBy: string;
@@ -93,8 +95,13 @@ export interface IPreferenceStore {
   importedCSLStylesPath: string;
 
   showPresetting: boolean;
+  showGuide: boolean;
   showWelcome: boolean;
   fontsize: "normal" | "large" | "larger";
+
+  // Custom CSS
+  customMainWindowCSS: string;
+  customQuickPasteCSS: string;
 }
 
 const _defaultPreferences: IPreferenceStore = {
@@ -120,14 +127,14 @@ const _defaultPreferences: IPreferenceStore = {
     { key: "rating", enable: false, width: -1 },
     { key: "tags", enable: false, width: -1 },
     { key: "folders", enable: false, width: -1 },
-    { key: "flag", enable: false, width: -1 },
+    { key: "flag", enable: true, width: -1 },
     { key: "note", enable: false, width: -1 },
     { key: "codes", enable: false, width: -1 },
     { key: "pages", enable: false, width: -1 },
     { key: "volume", enable: false, width: -1 },
     { key: "number", enable: false, width: -1 },
     { key: "publisher", enable: false, width: -1 },
-    { key: "addTime", enable: true, width: -1 },
+    { key: "addTime", enable: true, width: -1 }
   ],
 
   feedFields: [
@@ -145,7 +152,7 @@ const _defaultPreferences: IPreferenceStore = {
     { key: "volume", enable: false, width: -1 },
     { key: "number", enable: false, width: -1 },
     { key: "publisher", enable: false, width: -1 },
-    { key: "addTime", enable: true, width: -1 },
+    { key: "addTime", enable: true, width: -1 }
   ],
 
   preferedTheme: "light",
@@ -195,6 +202,8 @@ const _defaultPreferences: IPreferenceStore = {
 
   shortcutDelete: "Delete",
 
+  shortcutImportFrom: `${cmdOrCtrl}+O`,
+
   sidebarWidth: 20,
   detailPanelWidth: 75,
   mainviewSortBy: "addTime",
@@ -211,8 +220,13 @@ const _defaultPreferences: IPreferenceStore = {
   importedCSLStylesPath: "",
 
   showPresetting: true,
+  showGuide: true,
   showWelcome: true,
   fontsize: "normal",
+
+  // Custom CSS related
+  customMainWindowCSS: "",
+  customQuickPasteCSS: ""
 };
 
 function _migrate(
@@ -240,7 +254,8 @@ function _migrate(
       if (!_defaultPreferences.hasOwnProperty(key)) {
         try {
           store.delete(key as keyof IPreferenceStore);
-        } catch (e) {}
+        } catch (e) {
+        }
       }
     }
   }
@@ -254,7 +269,7 @@ function _migrate(
       publication: [
         "showMainPublication",
         "mainPublicationWidth",
-        "feedPublicationWidth",
+        "feedPublicationWidth"
       ],
       pubType: ["showMainPubType", "mainPubTypeWidth", "feedPubTypeWidth"],
       rating: ["showMainRating", "mainRatingWidth", "feedRatingWidth"],
@@ -262,7 +277,7 @@ function _migrate(
       tags: ["showMainTag", "mainTagWidth", null],
       folders: ["showMainFolder", "mainFolderWidth", null],
       note: ["showMainNote", "mainNoteWidth", null],
-      addTime: ["showMainAddTime", "mainAddTimeWidth", "feedAddTimeWidth"],
+      addTime: ["showMainAddTime", "mainAddTimeWidth", "feedAddTimeWidth"]
     };
 
     const mainTableFields: IDataViewField[] = [];
@@ -274,7 +289,7 @@ function _migrate(
       const [preShowKey, preMainWidthKey, preFeedWidthKey] = keyMap[key] || [
         null,
         null,
-        null,
+        null
       ];
 
       const enable =
@@ -297,7 +312,7 @@ function _migrate(
       const [preShowKey, preMainWidthKey, preFeedWidthKey] = keyMap[key] || [
         null,
         null,
-        null,
+        null
       ];
 
       const enable =
@@ -344,7 +359,7 @@ export class PreferenceService extends Eventable<IPreferenceStore> {
     if (isRendererProcess()) {
       const userDataPath = ipcRenderer.sendSync("getSystemPath", "userData");
       _store = new ElectronStore<IPreferenceStore>({
-        cwd: userDataPath,
+        cwd: userDataPath
       });
     } else {
       _store = new ElectronStore<IPreferenceStore>({});

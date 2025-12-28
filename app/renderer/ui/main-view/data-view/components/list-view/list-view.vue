@@ -12,6 +12,10 @@ const props = defineProps({
     type: Object as PropType<IPaperEntityCollection>,
     required: true,
   },
+  candidates: {
+    type: Object as PropType<Record<string, PaperEntity[]>>,
+    required: true,
+  },
   fieldEnables: {
     type: Object as PropType<Partial<Record<keyof PaperEntity, boolean>>>,
     required: true,
@@ -42,6 +46,7 @@ const props = defineProps({
 // State
 // ================
 const lastSelectedSingleIndex = ref<number>(-1);
+const uiState = uiStateService.useState();
 
 // =================
 // Event handlers
@@ -52,6 +57,7 @@ const emits = defineEmits([
   "event:contextmenu",
   "event:drag",
   "event:drag-file",
+  "event:click-candidate-btn",
 ]);
 
 const calSelectedIndex = (event: MouseEvent, index: number) => {
@@ -126,28 +132,32 @@ const onItemDraged = (event: DragEvent, index: number, id: OID) => {
 
 <template>
   <div>
-    <RecycleScroller
-      class="scroller max-h-[calc(100vh-3rem)]"
-      :items="entities"
-      :item-size="itemSize"
-      key-field="id"
-      v-slot="{ item, index }"
-      :buffer="500"
-    >
-      <PaperListItem
-        :id="`item-${index}`"
-        :height="itemSize"
-        :item="item"
-        :field-enables="fieldEnables"
-        :active="selectedIndex.indexOf(index) >= 0"
-        :categorizer-sort-by="categorizerSortBy"
-        :categorizer-sort-order="categorizerSortOrder"
-        @click="(e: MouseEvent) => {onItemClicked(e, index)}"
-        @contextmenu="(e: MouseEvent) => {onItemRightClicked(e, index)}"
-        @dblclick="(e: MouseEvent) => {onItemDoubleClicked(e, index)}"
-        draggable="true"
-        @dragstart="(e: DragEvent) => {onItemDraged(e, index, item.id)}"
-      />
-    </RecycleScroller>
+
+      <RecycleScroller
+        class="scroller max-h-[calc(100vh-3rem)]"
+        :items="entities"
+        :item-size="itemSize"
+        key-field="id"
+        v-slot="{ item, index }"
+        :buffer="500"
+      >
+        <PaperListItem
+          :id="`item-${index}`"
+          :height="itemSize"
+          :item="item"
+          :field-enables="fieldEnables"
+          :active="selectedIndex.indexOf(index) >= 0"
+          :categorizer-sort-by="categorizerSortBy"
+          :categorizer-sort-order="categorizerSortOrder"
+          :query-highlight="(uiState.commandBarSearchMode === 'general' && !uiState.commandBarText.startsWith('\\')) ? uiState.commandBarText : ''"
+          :show-candidate-btn="candidates[item.id]?.length > 0"
+          @click="(e: MouseEvent) => {onItemClicked(e, index)}"
+          @contextmenu="(e: MouseEvent) => {onItemRightClicked(e, index)}"
+          @dblclick="(e: MouseEvent) => {onItemDoubleClicked(e, index)}"
+          draggable="true"
+          @dragstart="(e: DragEvent) => {onItemDraged(e, index, item.id)}"
+          @event:click-candidate-btn="emits('event:click-candidate-btn', item.id)"
+        />
+      </RecycleScroller>
   </div>
 </template>

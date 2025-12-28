@@ -10,6 +10,7 @@ import {
 } from "electron";
 import os from "os";
 import path, { join, posix } from "path";
+import fs from "fs";
 
 import { errorcatching } from "@/base/error";
 import { Eventable } from "@/base/event";
@@ -20,6 +21,7 @@ import {
   PreferenceService,
 } from "@/common/services/preference-service";
 import { WindowStorage } from "@/main/window-storage";
+import { FileSystemService, IFileSystemService } from "./filesystem-service";
 
 interface WindowOptions extends BrowserWindowConstructorOptions {
   entry: string;
@@ -47,7 +49,8 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
   public browserWindows: WindowStorage;
 
   constructor(
-    @IPreferenceService private readonly _preferenceService: PreferenceService
+    @IPreferenceService private readonly _preferenceService: PreferenceService,
+    @IFileSystemService private readonly _fileSystemService: FileSystemService
   ) {
     super("windowProcessManagementService", {
       serviceReady: "",
@@ -162,7 +165,41 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       });
     }
 
+    // Insert custom CSS
+    const configDir = this._fileSystemService.getSystemPath(
+      "userData",
+      Process.main
+    );
+    if (fs.existsSync(path.join(configDir, `${id}.css`))) {
+      const css = fs.readFileSync(path.join(configDir, `${id}.css`), "utf-8");
+      this.insertCustomCSS(id, css);
+    }
+
     this.fire({ [id]: "created" });
+  }
+
+  // Map to store the inserted custom css keys, key is the windowId and value is the key
+  private insertedKeys = new Map<string, string>();
+
+  insertCustomCSS(windowId: string, css: string) {
+    const insertedKeys = this.insertedKeys.get(windowId);
+    if (insertedKeys) {
+      this.browserWindows.get(windowId).webContents.removeInsertedCSS(insertedKeys).then();
+    }
+    this.browserWindows.get(windowId).webContents.insertCSS(css).then(
+      key => {
+        this.insertedKeys.set(windowId, key);
+      }
+    );
+  }
+
+  removeCustomCSS(windowId: string) {
+    const key = this.insertedKeys.get(windowId);
+    if (key) {
+      this.browserWindows.get(windowId).webContents.removeInsertedCSS(key).then(() => {
+        this.insertedKeys.delete(windowId);
+      });
+    }
   }
 
   createMainRenderer() {
@@ -185,11 +222,11 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
           webSecurity: false,
           nodeIntegration: true,
           contextIsolation: false,
-          enableBlinkFeatures: "CSSColorSchemeUARendering",
+          enableBlinkFeatures: "CSSColorSchemeUARendering"
         },
         frame: false,
         vibrancy: "sidebar",
-        visualEffectState: "active",
+        visualEffectState: "active"
       },
       {
         close: (win: BrowserWindow) => {
@@ -198,8 +235,8 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
             this._preferenceService.set({
               windowSize: {
                 width: winSize.width,
-                height: winSize.height,
-              },
+                height: winSize.height
+              }
             });
           }
 
@@ -214,7 +251,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
           this.browserWindows.get(Process.renderer).destroy();
 
           if (process.platform !== "darwin") app.quit();
-        },
+        }
       }
     );
   }
@@ -233,12 +270,12 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       webPreferences: {
         webSecurity: false,
         nodeIntegration: true,
-        contextIsolation: false,
+        contextIsolation: false
       },
       frame: false,
       vibrancy: "sidebar",
       visualEffectState: "active",
-      show: false,
+      show: false
     };
     if (os.platform() === "darwin") {
       options["type"] = "panel";
@@ -255,7 +292,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       },
       show: (win: BrowserWindow) => {
         win.setSize(600, 76);
-      },
+      }
     });
 
     if (os.platform() === "darwin") {
@@ -632,5 +669,82 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       const currentWindow = this.browserWindows.get(windowId);
       currentWindow.center();
     }
+  }
+
+  download(windowId: string, url: string, options = {}, headers = {}): Promise<string> {
+    function registerListener(session, options, callback = (error?: Error, item?: any) => {
+    }) {
+      const downloadItems = new Set();
+      let receivedBytes = 0;
+      let completedBytes = 0;
+      let totalBytes = 0;
+      const activeDownloadItems = () => downloadItems.size;
+
+      const listener = (event, item, webContents) => {
+        downloadItems.add(item);
+        totalBytes += item.getTotalBytes();
+
+        const window_ = BrowserWindow.fromWebContents(webContents);
+        if (!window_) {
+          throw new Error("Failed to get window from web contents.");
+        }
+
+        const filePath = options.targetPath;
+
+        item.setSavePath(filePath);
+
+        item.on("updated", () => {
+        });
+
+        item.on("done", (event, state) => {
+          completedBytes += item.getTotalBytes();
+          downloadItems.delete(item);
+
+          if (!window_.isDestroyed() && !activeDownloadItems()) {
+            window_.setProgressBar(-1);
+            receivedBytes = 0;
+            completedBytes = 0;
+            totalBytes = 0;
+          }
+
+          if (options.unregisterWhenDone) {
+            session.removeListener("will-download", listener);
+          }
+
+          if (state === "cancelled") {
+            if (typeof options.onCancel === "function") {
+              options.onCancel(item);
+            }
+
+            callback(new Error("Download was cancelled."));
+          } else if (state === "interrupted") {
+            callback(new Error("Download was interrupted."));
+          } else if (state === "completed") {
+            const savePath = item.getSavePath();
+            callback(undefined, savePath);
+          }
+        });
+      };
+
+      session.on("will-download", listener);
+    }
+
+
+    return new Promise((resolve, reject) => {
+      if (this.exist(windowId)) {
+        const currentWindow = this.browserWindows.get(windowId);
+
+        registerListener(currentWindow.webContents.session, { unregisterWhenDone: true, ...options }, (error, item) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(item);
+          }
+        });
+        currentWindow.webContents.downloadURL(url, { headers });
+      } else {
+        resolve("");
+      }
+    });
   }
 }

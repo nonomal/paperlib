@@ -1,5 +1,21 @@
 # Paperlib API Release Note
 
+## v0.1.11
+
+- add `button` type component for preference.
+
+## v0.1.10
+
+- add `deleteSlotItem` for `PLAPI.uiSlotService`.
+
+## v0.1.9
+
+- add `supContextMenuRenameClicked` for `PLMainAPI.contextMenuService`.
+- `selectedQuerySentenceId` to `selectedQuerySentenceIds` in `UIStatesService`
+- `querySentenceSidebar` to `querySentencesSidebar` in `UIStatesService`
+- add `setSupDisplayName` for `PLAPI.paperService`.
+
+
 ## v0.1.8
 
 - `PLMainAPI.wndowProcessManagementService.create` has a new argument `additionalHeaders`.

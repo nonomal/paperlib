@@ -12,6 +12,7 @@ import { FieldTemplate } from "@/renderer/types/data-view";
 import Toggle from "./components/toggle.vue";
 import MainField from "./components/main-field.vue";
 import { IPreferenceStore } from "@/common/services/preference-service";
+import { Process } from "@/base/process-id";
 
 const prefState = preferenceService.useState();
 
@@ -180,7 +181,7 @@ const updatePref = (key: keyof IPreferenceStore, value: unknown) => {
     <PaperListItem
       class="bg-neutral-200 dark:bg-neutral-700 cursor-default mb-2"
       :item="item"
-      :field-enable="fieldEnable"
+      :field-enables="fieldEnable"
       :active="false"
       :categorizer-sort-by="prefState.sidebarSortBy"
       :categorizer-sort-order="prefState.sidebarSortOrder"
@@ -232,6 +233,5 @@ const updatePref = (key: keyof IPreferenceStore, value: unknown) => {
         @event:next-click="onMoveNextClicked(index, false)"
       />
     </div>
-
   </div>
 </template>

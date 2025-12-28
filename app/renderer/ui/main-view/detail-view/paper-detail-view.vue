@@ -111,6 +111,24 @@ disposable(
   )
 );
 
+const renamingSup = ref("");
+const onRenameSupClicked = (url: string) => {
+  renamingSup.value = url;
+};
+disposable(
+  PLMainAPI.contextMenuService.on(
+    "supContextMenuRenameClicked",
+    (newValue: { value: string }) => {
+      onRenameSupClicked(newValue.value);
+    }
+  )
+);
+
+const onSupDisplayNameUpdated = (customName: string) => {
+  paperService.setSupDisplayName(props.entity, renamingSup.value, customName);
+  renamingSup.value = "";
+};
+
 const dragAreaOpacity = ref(0);
 const dragCount = ref(0);
 const mainFileDragAreaHovered = ref(false);
@@ -191,7 +209,7 @@ const reanderedTitle = ref("");
 
 const renderTitle = async () => {
   if (props.entity.title?.includes("$")) {
-    reanderedTitle.value = await renderService.renderMath(props.entity.title);
+    reanderedTitle.value = renderService.renderMath(props.entity.title);
   } else {
     reanderedTitle.value = props.entity.title;
   }
@@ -245,7 +263,7 @@ onUpdated(() => {
       >
         <Categorizers
           :categorizers="entity.tags"
-          categorizerType="PaperTag.schema.name"
+          :categorizerType="CategorizerType.PaperTag"
           @event:delete="
             (categorizer) =>
               onDeleteCategorizer(categorizer, CategorizerType.PaperTag)
@@ -259,7 +277,7 @@ onUpdated(() => {
       >
         <Categorizers
           :categorizers="entity.folders"
-          categorizerType="PaperFolder.schema.name"
+          :categorizerType="CategorizerType.PaperFolder"
           @event:delete="
             (categorizer) =>
               onDeleteCategorizer(categorizer, CategorizerType.PaperFolder)
@@ -320,7 +338,7 @@ onUpdated(() => {
         :title="$t('mainview.supplementaries')"
         v-if="entity.supURLs.length > 0"
       >
-        <Supplementary :sups="entity.supURLs" />
+        <Supplementary :sups="entity.supURLs" :editingSup="renamingSup" @update:sup-display-name="onSupDisplayNameUpdated" />
       </Section>
       <Markdown :title="'Markdown'" :sups="entity.supURLs" />
 

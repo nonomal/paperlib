@@ -109,6 +109,8 @@ const computeFieldTemplates = () => {
 // Event Handler
 // ================================
 const onItemClicked = async (selectedIndex: number[]) => {
+  uiState.showingCandidatesId = "";
+
   if (isEqual(new Set(uiState.selectedIndex), new Set(selectedIndex))) {
     return;
   }
@@ -219,6 +221,10 @@ const onItemFileDraged = async (selectedIndex: number[]) => {
   PLMainAPI.fileSystemService.startDrag(fileURLs);
 };
 
+const onCandidateButtonClicked = (id: string) => {
+  uiState.showingCandidatesId = id;
+};
+
 const onTableHeaderClicked = (key: string) => {
   if (key === "tags" || key === "folders" || key == "codes") {
     return;
@@ -284,6 +290,14 @@ disposable(
   )
 );
 
+const resetSortBy = () => {
+  if ([...fieldTemplates.value.keys()].includes(prefState.mainviewSortBy)) {
+    return;
+  } else {
+    preferenceService.set({ mainviewSortBy: "addTime" });
+  }
+};
+
 onMounted(() => {
   onFontSizeChanged(prefState.fontsize);
   if (prefState.mainviewType === "list") {
@@ -291,6 +305,7 @@ onMounted(() => {
   } else {
     computeFieldTemplates();
   }
+  resetSortBy();
 });
 </script>
 
@@ -307,6 +322,7 @@ onMounted(() => {
       class="w-full max-h-[calc(100vh-4rem)]"
       v-if="prefState.mainviewType === 'list'"
       :entities="paperEntities"
+      :candidates="uiState.metadataCandidates"
       :field-enables="fieldEnables"
       :selected-index="uiState.selectedIndex"
       :platform="uiState.os"
@@ -318,12 +334,14 @@ onMounted(() => {
       @event:dblclick="onItemDoubleClicked"
       @event:drag="onItemDraged"
       @event:drag-file="onItemFileDraged"
+      @event:click-candidate-btn="onCandidateButtonClicked"
     />
     <TableView
       id="table-data-view"
       class="w-full max-h-[calc(100vh-4rem)]"
       v-else-if="prefState.mainviewType === 'table'"
       :entities="paperEntities"
+      :candidates="uiState.metadataCandidates"
       :field-templates="fieldTemplates"
       :selected-index="uiState.selectedIndex"
       :platform="uiState.os"
@@ -337,12 +355,14 @@ onMounted(() => {
       @event:drag-file="onItemFileDraged"
       @event:header-click="onTableHeaderClicked"
       @event:header-width-change="onTableHeaderWidthChanged"
+      @event:click-candidate-btn="onCandidateButtonClicked"
     />
     <TablePreviewView
       id="table-preview-data-view"
       class="w-full max-h-[calc(100vh-4rem)]"
       v-else-if="prefState.mainviewType === 'tableandpreview'"
       :entities="paperEntities"
+      :candidates="uiState.metadataCandidates"
       :field-templates="fieldTemplates"
       :selected-index="uiState.selectedIndex"
       :displayingURL="displayingURL"
@@ -357,6 +377,7 @@ onMounted(() => {
       @event:drag-file="onItemFileDraged"
       @event:header-click="onTableHeaderClicked"
       @event:header-width-change="onTableHeaderWidthChanged"
+      @event:click-candidate-btn="onCandidateButtonClicked"
     />
   </div>
 </template>

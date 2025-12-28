@@ -7,6 +7,7 @@ import {
   BIconGithub,
 } from "bootstrap-icons-vue";
 import { computed, PropType } from "vue";
+import WordHighlighter from "vue-word-highlighter";
 
 import {
   getCategorizerString,
@@ -34,6 +35,14 @@ const props = defineProps({
     required: true,
   },
   read: {
+    type: Boolean,
+    default: false,
+  },
+  queryHighlight: {
+    type: String,
+    default: "",
+  },
+  showCandidateBtn: {
     type: Boolean,
     default: false,
   },
@@ -88,18 +97,34 @@ const fields = computed(() => {
         value = value.name;
         break;
       }
+      case "title": {
+        if (value.includes("$")) {
+          value = renderService.renderMath(value);
+        } else {
+          value = value;
+        }
+        break;
+      }
+      case "note": {
+        value =
+          value.substring(0, 4) === "<md>" ? value.replace("<md>", "") : value;
+        break;
+      }
     }
 
     const field = {
       type: fieldTemplate.type,
       value: value,
       width: fieldTemplate.width,
+      highlightable: fieldKey === "title" || fieldKey === "authors",
     };
     fields.push(field);
   }
 
   return fields;
 });
+
+const emits = defineEmits(["event:click-candidate-btn"]);
 </script>
 
 <template>
@@ -119,14 +144,32 @@ const fields = computed(() => {
       v-for="(field, index) in fields"
       :style="`width: ${field.width}%`"
     >
-      <span class="my-auto truncate" v-if="field.type === 'string'">{{
-        field.value
-      }}</span>
+      <span
+        class="my-auto truncate"
+        v-if="field.type === 'string' && !field.highlightable"
+        >{{ field.value }}</span
+      >
+      <WordHighlighter
+        class="my-auto truncate"
+        v-else-if="field.type === 'string' && field.highlightable"
+        :query="queryHighlight"
+        highlight-class="bg-yellow-300 rounded-sm px-0.5"
+        :text-to-highlight="field.value"
+        :split-by-space="true"
+      />
       <span
         class="my-auto truncate"
         v-html="field.value"
-        v-else-if="field.type === 'html'"
+        v-else-if="field.type === 'html' && !field.highlightable"
       ></span>
+      <WordHighlighter
+        class="my-auto truncate"
+        v-else-if="field.type === 'html' && field.highlightable"
+        :query="queryHighlight"
+        highlight-class="bg-yellow-300 rounded-sm px-0.5"
+        :html-to-highlight="field.value"
+        :split-by-space="true"
+      />
       <span class="my-auto" v-else-if="field.type === 'flag'">
         <BIconFlagFill
           class="my-auto text-xxs"
@@ -173,5 +216,18 @@ const fields = computed(() => {
         {{ field.value }}
       </span>
     </div>
+      <div
+        class="absolute mt-0.5 right-2 flex justify-end text-xxs rounded-md px-1.5 shadow-md"
+        :class="
+          active
+            ? 'bg-blue-500 hover:bg-blue-400'
+            : 'bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600'
+        "
+        @click.stop="$emit('event:click-candidate-btn')"
+        v-if="showCandidateBtn"
+      >
+        <span class="m-auto">{{ $t("mainview.foundcandidates") }}</span>
+      </div>
+
   </div>
 </template>

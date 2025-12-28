@@ -1,3 +1,80 @@
+## v3.1.12 Sep 28 2025
+
+1. 迁移：云数据库到本地，暂时停止云同步功能。by @geoffreychen777
+1. 迁移：修复 Windows 迁移 Bug。by @geoffreychen777
+
+## v3.1.11 Sep 25 2025
+
+1. 迁移：云数据库到本地，暂时停止云同步功能。by @geoffreychen777
+
+## v3.1.10 Dec 22 2024
+
+1. 修复：右侧面板中的标签链接不起作用。by @geoffreychen777
+2. 修复：文件夹上下文菜单失效。by @geoffreychen777
+3. 修复：排序 bug。by @geoffreychen777
+4. 修复：标签消失 bug。by @geoffreychen777
+
+## v3.1.9 Aug 23 2024
+
+1. 修复：表格预览时图中的滚动 bug。 by @geoffreychen777
+2. 修复：网络请求代理和自定义 CA 的 bug. by @geoffreychen777
+3. 增强：在无网络时使用同步数据库。 by @geoffreychen777
+
+## v3.1.8 25/07 2024
+
+1. 修复：移动文件到不同磁盘设备时的 bug。by @geoffreychen777
+2. 增强：在删除标签/组时显示确认对话框。by @igoogolx
+
+## v3.1.7 11/07 2024
+
+1. 修复：编辑源代码仓库时的 bug。by @geoffreychen777
+
+## v3.1.6 30/06 2024
+
+1. 新功能：现在你可以通过文件选择器导入文件。by @lcandy2
+2. 新功能：模糊元数据搜刮。by @geoffreychen777 ![](https://paperlib.app/assets/images/getting-started/fuzzyscrape.png)
+3. 增强：通过浏览器插件下载 PDF。by @geoffreychen777
+4. 插件开发者：新的 API 用于删除 UI 插槽。by @geoffreychen777
+
+
+## v3.1.5 10/06 2024
+
+1. 修复：链接文件夹图标的显示问题。by @geoffreychen777
+2. 增强：命令面板按下回车时的行为。by @geoffreychen777
+
+## v3.1.3 02/06 2024
+
+1. 新功能：现在你可以通过按住 Ctrl/CMD 键点击多个标签/组/智能过滤器来组合它们。by @geoffreychen777
+2. 新功能：现在你可以将子文件夹拖动到根文件夹。
+3. 修复：子文件夹着色 Bug。by @geoffreychen777
+
+## v3.1.2 25/05 2024
+
+1. 新功能：现在你可以自定义重命名附件了。by @ZephyrZhang3, @geoffreychen777
+2. 新功能：为首次使用者添加了引导。by @geoffreychen777
+3. 新功能：在显示 Markdown 笔记时隐藏 `<md>` 标签。by @geoffreychen777
+4. 修复：订阅 ScienceDirect 时的 RSS Bug。by @charlieJ107, @geoffreychen777
+5. 修复：修改智能过滤器颜色时的 Bug。by @geoffreychen777
+
+## v3.1.1 19/05 2024
+
+1. 介绍新插件: `paperlib ai chat extension`. 你可以和语言模型讨论你的论文了。by @igoogolx,@geoffreychen777
+2. 修复：表格视图 Bug。by @geoffreychen777
+
+## v3.1.0 18/05 2024
+
+1. 介绍新插件: `paperlib ai chat extension`. 你可以和语言模型讨论你的论文了。by @igoogolx,@geoffreychen777
+2. 新功能：渲染标题中的 LaTex。by @geoffreychen777
+3. 新功能：在搜索结果中高亮搜索关键字。by @geoffreychen777
+4. 其他：为新浏览器插件做准备。by @geoffreychen777
+5. 修复：偏好设置窗口拖动问题。by @geoffreychen777
+
+## v3.0.11 06/05 2024
+
+1. 修复：直接导入论文到标签/文件夹。by @geoffreychen777
+2. 增强：添加重复论文时的通知。by @geoffreychen777
+3. 增强：每日检查插件更新。by @charlieJ107
+
 ## v3.0.10 24/04 2024
 
 1. 翻译：繁体中文。感谢 @hazdzz

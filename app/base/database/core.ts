@@ -1,6 +1,6 @@
 import { existsSync, promises, rmSync, unlinkSync } from "fs";
 import path from "path";
-import Realm, { ConfigurationWithSync } from "realm";
+import Realm, { ConfigurationWithSync, OpenRealmBehaviorType } from "realm";
 
 import { migrate, syncMigrate } from "@/base/database/migration";
 import { Eventable } from "@/base/event";
@@ -64,6 +64,17 @@ export class DatabaseCore extends Eventable<IDatabaseCoreState> {
    */
   @processing(ProcessingKey.General)
   async initRealm(reinit = false): Promise<Realm> {
+    if (this._state.dbInitializing) {
+      return new Promise((resolve) => {
+        const interval = setInterval(() => {
+          if (this._state.dbInitialized) {
+            clearInterval(interval);
+            resolve(this._realm!);
+          }
+        }, 100);
+      });
+    }
+
     this._logService.info("Initializing database...", "", false, "Database");
     await this._fileService.stopWatch();
 
@@ -88,6 +99,9 @@ export class DatabaseCore extends Eventable<IDatabaseCoreState> {
     if (type === ConfigType.Cloud) {
       try {
         this._realm = await Realm.open(config);
+
+
+
         this._syncSession = this._realm.syncSession;
 
         await new Promise((resolve) => {
@@ -339,6 +353,12 @@ export class DatabaseCore extends Eventable<IDatabaseCoreState> {
               },
               rerunOnOpen: true,
             },
+            newRealmFileBehavior: {
+              type: OpenRealmBehaviorType.OpenImmediately,
+            },
+            existingRealmFileBehavior: {
+              type: OpenRealmBehaviorType.OpenImmediately,
+            }
           },
           path: path.join(
             await PLMainAPI.fileSystemService.getSystemPath(
@@ -375,6 +395,12 @@ export class DatabaseCore extends Eventable<IDatabaseCoreState> {
           sync: {
             user: cloudUser,
             partitionValue: cloudUser.id,
+            newRealmFileBehavior: {
+              type: OpenRealmBehaviorType.OpenImmediately,
+            },
+            existingRealmFileBehavior: {
+              type: OpenRealmBehaviorType.OpenImmediately,
+            }
           },
           path: path.join(
             await PLMainAPI.fileSystemService.getSystemPath(
@@ -412,23 +438,24 @@ export class DatabaseCore extends Eventable<IDatabaseCoreState> {
       );
 
       const id = this._preferenceService.get("syncAPPID") as string;
+
+      PLAPI.logService.info("App ID: " + id);
+
       this._app = new Realm.App({
         id: id,
       });
+
+      PLAPI.logService.info("App: " + id);
     }
 
-    let connected = false;
-    try {
-      const response = await fetch("https://httpbin.org/ip");
-      connected = response.ok;
-    } catch (e) {
-      connected = false;
-    }
+    let connected = await PLMainAPI.proxyService.isOnline();;
 
     if (!connected) {
       this._logService.warn("No network connection...", "", true, "Database");
       return this._app?.currentUser ?? null;
     }
+
+    this._logService.info("Network established.", "", true, "Database")
 
     try {
       const syncPassword =

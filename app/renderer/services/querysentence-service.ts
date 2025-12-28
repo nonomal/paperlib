@@ -37,11 +37,10 @@ export class QuerySentenceService {
     data: T extends PaperSmartFilterType
       ? IPaperSmartFilterCollection
       : ICategorizerCollection,
-    type: T
+    type: T,
+    linkedFolderName?: string
   ): DirectedGraph {
     const graph = new DirectedGraph();
-
-    const linkedFolderName = this._preferenceService.get("pluginLinkedFolder");
 
     for (const obj of data) {
       const node = {};
@@ -93,7 +92,8 @@ export class QuerySentenceService {
     data: ICategorizerCollection | IPaperSmartFilterCollection,
     type: CategorizerType | PaperSmartFilterType,
     sortBy: string,
-    sortOrder: string
+    sortOrder: string,
+    linkedFolderName?: string
   ): ViewTreeNode {
     if (data.length === 0) {
       return {
@@ -108,15 +108,17 @@ export class QuerySentenceService {
       };
     }
 
-    const graph = this.parseDAG(data, type);
+    const graph = this.parseDAG(data, type, linkedFolderName);
 
-    let rootID: string | undefined;
+    let rootIDs: [string, number][] = [];
 
     graph.forEachNode((node) => {
       if (graph.inDegree(node) === 0) {
-        rootID = node;
+        rootIDs.push([node, graph.outDegree(node)]);
       }
     });
+
+    const rootID = rootIDs.sort((a, b) => b[1] - a[1])[0][0];
 
     if (rootID === undefined) {
       throw new Error("Invalid query graph, no root node found.");
